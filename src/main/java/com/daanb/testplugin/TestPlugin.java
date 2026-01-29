@@ -1,16 +1,20 @@
 package com.daanb.testplugin;
 
+import com.daanb.testplugin.commands.firebarrage.FireBarrage;
 import com.hypixel.hytale.component.ComponentType;
-import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.server.core.modules.entity.teleport.TeleportRecord;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+/**
+ * Bug list:
+ *  - failure to decode the ProjectileEmitter component
+ *  - The interactions attached to the projectile mess things up (client server desync)
+ */
 public class TestPlugin extends JavaPlugin {
 
     private static TestPlugin instance;
-    private ComponentType<EntityStore, SpawnProjectileComponent> spawnProjectileComponentComponentType;
+    private ComponentType<EntityStore, ProjectileEmitter> projectileEmitterComponentType;
 
     public TestPlugin(JavaPluginInit init) {
         super(init);
@@ -20,18 +24,18 @@ public class TestPlugin extends JavaPlugin {
     @Override
     protected void setup() {
         this.getCommandRegistry().registerCommand(new TestCommand());
-        this.getCommandRegistry().registerCommand(new OrbCommand());
+        this.getCommandRegistry().registerCommand(new FireBarrage());
 
         //important: initalize component type before initializing the system that manipulates it
-        this.spawnProjectileComponentComponentType = this.getEntityStoreRegistry().registerComponent(SpawnProjectileComponent.class, "SpawnProjectile", SpawnProjectileComponent.CODEC);
-        this.getEntityStoreRegistry().registerSystem(new SpawnProjectileSystem());
+        this.projectileEmitterComponentType = this.getEntityStoreRegistry().registerComponent(ProjectileEmitter.class, "ProjectileEmitter", ProjectileEmitter.CODEC);
+        this.getEntityStoreRegistry().registerSystem(new ProjectileEmitterSystem());
     }
 
     public static TestPlugin get() {
         return instance;
     }
 
-    public ComponentType<EntityStore, SpawnProjectileComponent> getSpawnProjectileComponentComponentType() {
-        return spawnProjectileComponentComponentType;
+    public ComponentType<EntityStore, ProjectileEmitter> getProjectileEmitterComponentType() {
+        return projectileEmitterComponentType;
     }
 }
