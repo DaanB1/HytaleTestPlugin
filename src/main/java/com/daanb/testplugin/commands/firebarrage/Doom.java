@@ -22,6 +22,7 @@ public class Doom extends AbstractPlayerCommand {
 
     private final int RADIUS = 50;
     private final int HEIGHT = 100;
+    private final String CONFIG_NAME = "Projectile_Config_Custom";
 
     public Doom() {
         String name = "doom";
@@ -31,14 +32,13 @@ public class Doom extends AbstractPlayerCommand {
 
     @Override
     protected void execute(@NonNull CommandContext commandContext, @NonNull Store<EntityStore> store, @NonNull Ref<EntityStore> ref, @NonNull PlayerRef playerRef, @NonNull World world) {
-        ProjectileConfig config = ProjectileConfig.getAssetMap().getAsset("Projectile_Config_Custom");
-        if (config == null) { return; }
 
-//        ProjectileEmitter emitter = new ProjectileEmitter(config, true, 10,5, 0.1f);
+//        ProjectileEmitter emitter = new ProjectileEmitter(CONFIG_NAME, true, 10,5, 0.1f);
 //        Query<EntityStore> query = Query.and(TransformComponent.getComponentType(), UUIDComponent.getComponentType());
 //        store.forEachEntityParallel(query, (index, archetypeChunk, commandBuffer) -> {
 //            commandBuffer.addComponent(archetypeChunk.getReferenceTo(index), ProjectileEmitter.getComponentType(), emitter);
 //        });
+
 
         //gets all entities in radius. took a while to figure this out
         ObjectList<Ref<EntityStore>> results = SpatialResource.getThreadLocalReferenceList();
@@ -47,18 +47,18 @@ public class Doom extends AbstractPlayerCommand {
 
         ObjectList<Ref<EntityStore>> entitiesCopy = new ObjectArrayList<>(results);
 
-        world.execute(() -> {
-            for (Ref<EntityStore> entityRef : entitiesCopy) {
-                TransformComponent transform = store.getComponent(entityRef, TransformComponent.getComponentType());
-                if (transform == null) continue;
+        for (Ref<EntityStore> entityRef : entitiesCopy) {
+            if (!entityRef.isValid()) continue;
 
-                UUIDComponent uuidComponent = store.getComponent(entityRef, UUIDComponent.getComponentType());
-                if (uuidComponent == null) continue;
+            TransformComponent transform = store.getComponent(entityRef, TransformComponent.getComponentType());
+            if (transform == null) continue;
 
-                ProjectileEmitter emitter = new ProjectileEmitter(config, true, 10,5, 0.1f);
-                store.putComponent(entityRef, ProjectileEmitter.getComponentType(), emitter);
-            }
-        });
+            UUIDComponent uuidComponent = store.getComponent(entityRef, UUIDComponent.getComponentType());
+            if (uuidComponent == null) continue;
+
+            ProjectileEmitter emitter = new ProjectileEmitter(CONFIG_NAME, true, 10,5, 0.1f);
+            store.putComponent(entityRef, ProjectileEmitter.getComponentType(), emitter);
+        }
 
     }
 }

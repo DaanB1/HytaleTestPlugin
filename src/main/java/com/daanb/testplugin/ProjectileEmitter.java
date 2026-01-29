@@ -20,31 +20,39 @@ public class ProjectileEmitter implements Component<EntityStore> {
 
     public static final BuilderCodec<ProjectileEmitter> CODEC;
 
-    private ProjectileConfig config;
+    //persistent
+    private String configName;
     private boolean repeatingForever = false;
     private int repetitions = 0;
     private int remainingTickDelay = 0;
     private int tickDelay = 0;
     private float directionalOffset = 0f;
 
-    //For when you want to launch a projectile repeatedly
-    public ProjectileEmitter(@NonNull ProjectileConfig config, boolean repeatingForever, int repetitions, int tickDelay, float directionalOffset) {
+    //non persistent
+    private ProjectileConfig config;
 
-        this.config = config;
+    //For when you want to launch a projectile repeatedly
+    public ProjectileEmitter(String configName, boolean repeatingForever, int repetitions, int tickDelay, float directionalOffset) {
+
+        this.configName = configName;
         this.repeatingForever = repeatingForever;
         this.repetitions = repetitions;
         this.tickDelay = tickDelay;
         this.remainingTickDelay =  0;
         this.directionalOffset = directionalOffset;
+
+        this.config = ProjectileEmitter.loadConfig(configName);
     }
 
     //For when you want to launch a single projectile
-    public ProjectileEmitter(@NonNull ProjectileConfig config) {
-        this.config = config;
+    public ProjectileEmitter(String configName) {
+        this.configName = configName;
+        this.config = ProjectileEmitter.loadConfig(configName);
     }
 
     //Copy constructor
     public ProjectileEmitter(ProjectileEmitter other) {
+        this.configName = other.configName;
         this.config = other.config;
         this.repeatingForever = other.repeatingForever;
         this.repetitions = other.repetitions;
@@ -54,11 +62,6 @@ public class ProjectileEmitter implements Component<EntityStore> {
     }
 
     public ProjectileEmitter() {
-        this.repeatingForever = false;
-        this.repetitions = 0;
-        this.tickDelay = 0;
-        this.remainingTickDelay = 0;
-        this.directionalOffset = 0f;
     }
 
     public static ComponentType<EntityStore, ProjectileEmitter> getComponentType() {
@@ -70,8 +73,8 @@ public class ProjectileEmitter implements Component<EntityStore> {
         return new ProjectileEmitter(this);
     }
 
-    public ProjectileConfig getConfig() {
-        return config;
+    public String getConfigName() {
+        return configName;
     }
 
     public boolean isRepeatingForever() {
@@ -80,14 +83,6 @@ public class ProjectileEmitter implements Component<EntityStore> {
 
     public int getRepetitions() {
         return repetitions;
-    }
-
-    public int getTickDelay() {
-        return tickDelay;
-    }
-
-    public int getRemainingTickDelay() {
-        return remainingTickDelay;
     }
 
     public float getDirectionalOffset() {
@@ -101,47 +96,54 @@ public class ProjectileEmitter implements Component<EntityStore> {
         }
 
         remainingTickDelay = tickDelay;
+        if(repetitions > 1)
+            repetitions -= 1;
         return true;
     }
 
-    public void decrementRepetitions() {
-        repetitions--;
+    public ProjectileConfig getConfig() {
+        return config;
+    }
+
+    private static ProjectileConfig loadConfig(String configName) {
+        return ProjectileConfig.getAssetMap().getAsset(configName);
     }
 
     static {
         CODEC = BuilderCodec.builder(ProjectileEmitter.class, ProjectileEmitter::new)
 
-                .appendInherited(new KeyedCodec<>("Config", ProjectileConfig.CODEC),
-                        (data, value) -> data.config = value,
-                        ProjectileEmitter::getConfig,
-                        (o, p) -> o.config = p.config)
+                //Note: Instead of storing the full ProjectileEmitter, we only store the name
+                //and load it immediately after the name gets read.
+                .append(new KeyedCodec<>("ConfigName", Codec.STRING),
+                        (data, value) -> {
+                            data.configName = value;
+                            data.config = ProjectileEmitter.loadConfig(value);},
+                        ProjectileEmitter::getConfigName)
                 .add()
 
                 .append(new KeyedCodec<>("RepeatingForever", Codec.BOOLEAN),
                         (data, value) -> data.repeatingForever = value,
-                        ProjectileEmitter::isRepeatingForever)
+                        (data -> data.repeatingForever))
                 .add()
 
                 .append(new KeyedCodec<>("RemainingTickDelay", Codec.INTEGER),
                         (data, value) -> data.remainingTickDelay = value,
-                        ProjectileEmitter::getRemainingTickDelay)
+                        (data -> data.remainingTickDelay))
                 .add()
 
                 .append(new KeyedCodec<>("TickDelay", Codec.INTEGER),
                         (data, value) -> data.tickDelay = value,
-                        ProjectileEmitter::getTickDelay)
-                .addValidator(Validators.min(0))
+                        (data -> data.tickDelay))
                 .add()
 
                 .append(new KeyedCodec<>("Repetitions", Codec.INTEGER),
                         (data, value) -> data.repetitions = value,
-                        ProjectileEmitter::getRepetitions)
-                .addValidator(Validators.min(0))
+                        (data -> data.repetitions))
                 .add()
 
                 .append(new KeyedCodec<>("DirectionalOffset", Codec.FLOAT),
                         (data, value) -> data.directionalOffset = value,
-                        ProjectileEmitter::getDirectionalOffset)
+                        (data -> data.directionalOffset))
                 .add()
 
                 .build();

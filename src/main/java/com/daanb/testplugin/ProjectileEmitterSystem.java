@@ -26,6 +26,9 @@ public class ProjectileEmitterSystem extends EntityTickingSystem<EntityStore> {
         HeadRotation headRotation = archetypeChunk.getComponent(index, HeadRotation.getComponentType());
         ModelComponent model = archetypeChunk.getComponent(index, ModelComponent.getComponentType());
         Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
+        if (!ref.isValid()) {
+            System.err.println("Invalid entity ref: " + ref);
+        }
 
         Vector3d position = getPosition(transform, model);
         Vector3d direction = getDirection(transform, headRotation, emitter);

@@ -8,7 +8,6 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 /**
  * Bug list:
- *  - failure to decode the ProjectileEmitter component
  *  - The interactions attached to the projectile mess things up (client server desync)
  */
 public class TestPlugin extends JavaPlugin {
